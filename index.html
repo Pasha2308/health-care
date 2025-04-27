@@ -1,43 +1,4 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -49,7 +10,7 @@
 <body class="bg-gray-100 font-sans">
   <div class="container mx-auto p-4 max-w-4xl">
     <h1 class="text-3xl font-bold text-center mb-6">SkillDoze Healthcare AI Agent</h1>
-    <p class="text-center text-gray-600 mb-8">Master RCM and Medical Coding: QA, Mock Interviews, and ATS-Friendly Resumes</p>
+    <p class="text-center at text-gray-600 mb-8">Master RCM and Medical Coding: QA, Mock Interviews, and ATS-Friendly Resumes</p>
 
     <!-- Chatbot Section -->
     <div class="bg-white p-6 rounded-lg shadow-md mb-8">
@@ -63,65 +24,89 @@
     <div class="bg-white p-6 rounded-lg shadow-md">
       <h2 class="text-2xl font-semibold mb-4">Resume Builder</h2>
       <input id="name" type="text" placeholder="Full Name" class="w-full p-2 border rounded mb-2">
-      <input id="email" type="email" placeholder="Email" class="w-full p-2 border rounded mb-2">
-      <input id="experience" type="text" placeholder="Experience (e.g., Medical Coder, 2 years)" class="w-full p-2 border rounded mb-2">
-      <input id="skills" type="text" placeholder="Skills (e.g., ICD-10, CPT, RCM)" class="w-full p-2 border rounded mb-2">
+      <input id="address" type="text" placeholder="Address" class="w-full p-2 border rounded mb-2">
+      <input id="phone" type="tel" placeholder="Phone Number" class="w-full p-2 border rounded mb-2">
+      <input id="email" type="email" placeholder="Email Address" class="w-full p-2 border rounded mb-2">
+      <input id="linkedin" type="url" placeholder="LinkedIn Profile (optional)" class="w-full p-2 border rounded mb-2">
+      <input id="experienceYears" type="number" placeholder="Years of Experience" class="w-full p-2 border rounded mb-2">
+      <input id="certifications" type="text" placeholder="Certifications (e.g., CPC – AAPC, 2023)" class="w-full p-2 border rounded mb-2">
+      <input id="jobTitle1" type="text" placeholder="Job Title (e.g., Medical Coder)" class="w-full p-2 border rounded mb-2">
+      <input id="company1" type="text" placeholder="Company (e.g., ABC Healthcare)" class="w-full p-2 border rounded mb-2">
+      <input id="location1" type="text" placeholder="City, State" class="w-full p-2 border rounded mb-2">
+      <input id="dates1" type="text" placeholder="Dates (e.g., Jan 2023 – Present)" class="w-full p-2 border rounded mb-2">
+      <textarea id="jobDesc1" placeholder="Job Responsibilities (one per line)" class="w-full p-2 border rounded mb-2" rows="4"></textarea>
+      <input id="education" type="text" placeholder="Education (e.g., BS Health Information Management, XYZ University, 2020)" class="w-full p-2 border rounded mb-2">
+      <input id="codingSoftware" type="text" placeholder="Medical Coding Software (e.g., 3M CodeFinder, TruCode)" class="w-full p-2 border rounded mb-2">
+      <input id="ehrSystems" type="text" placeholder="EHR/EMR Systems (e.g., Epic, Cerner)" class="w-full p-2 border rounded mb-2">
+      <input id="affiliations" type="text" placeholder="Professional Affiliations (e.g., AAPC, AHIMA)" class="w-full p-2 border rounded mb-2">
+      <input id="languages" type="text" placeholder="Languages (e.g., English, Spanish)" class="w-full p-2 border rounded mb-2">
       <button onclick="generateResume()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Generate Resume</button>
     </div>
   </div>
 
   <script>
-    // Simulated AI Knowledge Base for Healthcare (RCM and Medical Coding)
-    const knowledgeBase = {
-      qa: {
-        "check code": "To verify a medical code, ensure it aligns with ICD-10 or CPT guidelines. For example, ICD-10 code J45.909 is for unspecified asthma. Provide the code or case details for a specific check.",
-        "rcm process": "RCM includes patient registration, insurance verification, coding, claim submission, payment posting, and denial management. Errors in coding can lead to claim denials."
-      },
-      interview: {
-        "mock interview": "Here's a sample question: 'Explain how you ensure coding accuracy in RCM.' Suggested answer: 'I cross-reference patient records with ICD-10 and CPT guidelines and use software like 3M Codefinder.' Try answering this question or request another.",
-        "coding question": "Question: 'What’s the difference between ICD-10 and CPT codes?' Answer: 'ICD-10 codes describe diagnoses, while CPT codes describe procedures.' Provide your answer for feedback."
-      }
-    };
+    // Groq API Configuration
+    const GROQ_API_KEY = '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';
+    const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-    // Simulated LLM Response Generator
-    function getAIResponse(input) {
-      input = input.toLowerCase();
-      if (input.includes("qa") || input.includes("code") || input.includes("rcm")) {
-        for (let key in knowledgeBase.qa) {
-          if (input.includes(key)) return knowledgeBase.qa[key];
-        }
-        return "Please provide more details about the medical coding or RCM query.";
-      } else if (input.includes("interview") || input.includes("mock")) {
-        for (let key in knowledgeBase.interview) {
-          if (input.includes(key)) return knowledgeBase.interview[key];
-        }
-        return "Try asking for a 'mock interview' or a specific interview question.";
-      } else {
-        return "I specialize in healthcare RCM and medical coding. Ask about QA, mock interviews, or resumes!";
-      }
-    }
-
-    // Chatbot Handler
-    function handleChat() {
-      const input = document.getElementById("chatInput").value;
-      const outputDiv = document.getElementById("chatOutput");
-      if (input.trim() === "") return;
+    // Handle Chat with Groq API
+    async function handleChat() {
+      const input = document.getElementById('chatInput').value;
+      const outputDiv = document.getElementById('chatOutput');
+      if (input.trim() === '') return;
 
       // Append user message
-      const userMessage = document.createElement("div");
-      userMessage.className = "text-right mb-2";
+      const userMessage = document.createElement('div');
+      userMessage.className = 'text-right mb-2';
       userMessage.innerHTML = `<span class="bg-blue-100 p-2 rounded">You: ${input}</span>`;
       outputDiv.appendChild(userMessage);
 
-      // Get AI response
-      const aiResponse = getAIResponse(input);
-      const aiMessage = document.createElement("div");
-      aiMessage.className = "text-left mb-2";
-      aiMessage.innerHTML = `<span class="bg-gray-200 p-2 rounded">AI: ${aiResponse}</span>`;
-      outputDiv.appendChild(aiMessage);
+      // Prepare system prompt for healthcare context
+      const systemPrompt = `You are a healthcare AI agent specializing in Revenue Cycle Management (RCM) and medical coding. You assist students with:
+        - Quality Assurance (QA): Checking medical coding accuracy (ICD-10, CPT, HCPCS).
+        - Mock Interviews: Providing realistic interview questions for medical coding roles and feedback on answers.
+        Provide accurate, concise, and professional responses tailored to healthcare education. For coding queries, reference guidelines like ICD-10-CM or CPT 2023. For interviews, offer sample questions and suggested answers.`;
+
+      try {
+        const response = await fetch(GROQ_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${GROQ_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: input }
+            ],
+            max_tokens: 500,
+            temperature: 0.7
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const aiResponse = data.choices[0].message.content;
+
+        // Append AI response
+        const aiMessage = document.createElement('div');
+        aiMessage.className = 'text-left mb-2';
+        aiMessage.innerHTML = `<span class="bg-gray-200 p-2 rounded">AI: ${aiResponse}</span>`;
+        outputDiv.appendChild(aiMessage);
+      } catch (error) {
+        console.error('Error calling Groq API:', error);
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'text-left mb-2';
+        errorMessage.innerHTML = `<span class="bg-red-100 p-2 rounded">AI: Sorry, there was an error processing your request. Please try again.</span>`;
+        outputDiv.appendChild(errorMessage);
+      }
 
       // Clear input and scroll to bottom
-      document.getElementById("chatInput").value = "";
+      document.getElementById('chatInput').value = '';
       outputDiv.scrollTop = outputDiv.scrollHeight;
     }
 
@@ -130,26 +115,137 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
 
-      const name = document.getElementById("name").value || "John Doe";
-      const email = document.getElementById("email").value || "john.doe@example.com";
-      const experience = document.getElementById("experience").value || "Medical Coder, 2 years";
-      const skills = document.getElementById("skills").value || "ICD-10, CPT, RCM";
+      // Collect user inputs
+      const name = document.getElementById('name').value || 'John Doe';
+      const address = document.getElementById('address').value || '123 Main St, City, State';
+      const phone = document.getElementById('phone').value || '123-456-7890';
+      const email = document.getElementById('email').value || 'john.doe@example.com';
+      const linkedin = document.getElementById('linkedin').value || '';
+      const experienceYears = document.getElementById('experienceYears').value || '2';
+      const certifications = document.getElementById('certifications').value || 'Certified Professional Coder (CPC) – AAPC, 2023';
+      const jobTitle1 = document.getElementById('jobTitle1').value || 'Medical Coder';
+      const company1 = document.getElementById('company1').value || 'ABC Healthcare Services';
+      const location1 = document.getElementById('location1').value || 'City, State';
+      const dates1 = document.getElementById('dates1').value || 'Jan 2023 – Present';
+      const jobDesc1 = document.getElementById('jobDesc1').value.split('\n').filter(line => line.trim()) || [
+        'Reviewed patient records and coded diagnoses and procedures using ICD-10, CPT, and HCPCS systems.',
+        'Ensured all coding was in compliance with healthcare regulations and payer guidelines.'
+      ];
+      const education = document.getElementById('education').value || 'BS Health Information Management, XYZ University, 2020';
+      const codingSoftware = document.getElementById('codingSoftware').value || '3M CodeFinder, TruCode';
+      const ehrSystems = document.getElementById('ehrSystems').value || 'Epic, Cerner';
+      const affiliations = document.getElementById('affiliations').value || 'Member, AAPC; Member, AHIMA';
+      const languages = document.getElementById('languages').value || 'English';
 
       // ATS-Friendly Resume Content
+      let y = 20;
       doc.setFontSize(16);
-      doc.text("Resume", 20, 20);
+      doc.text(name, 20, y);
+      y += 10;
       doc.setFontSize(12);
-      doc.text(`Name: ${name}`, 20, 30);
-      doc.text(`Email: ${email}`, 20, 40);
-      doc.text("Professional Summary:", 20, 50);
-      doc.text("Certified Medical Coder with expertise in RCM and accurate coding per ICD-10 and CPT guidelines.", 20, 60);
-      doc.text("Experience:", 20, 70);
-      doc.text(experience, 20, 80);
-      doc.text("Skills:", 20, 90);
-      doc.text(skills, 20, 100);
+      doc.text(address, 20, y);
+      y += 6;
+      doc.text(`Phone: ${phone}`, 20, y);
+      y += 6;
+      doc.text(`Email: ${email}`, 20, y);
+      y += 6;
+      if (linkedin) {
+        doc.text(`LinkedIn: ${linkedin}`, 20, y);
+        y += 6;
+      }
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text('Professional Summary', 20, y);
+      y += 6;
+      doc.setFontSize(12);
+      doc.text(`Detail-oriented and certified Medical Coder with ${experienceYears} years of experience in coding medical diagnoses and procedures using ICD-10, CPT, and HCPCS codes. Adept at ensuring accuracy and compliance with healthcare regulations, working collaboratively with healthcare professionals to maintain patient records. Proficient in medical terminology, data entry, and utilizing EHR systems to streamline operations.`, 20, y, { maxWidth: 170 });
+      y += 30;
+
+      doc.setFontSize(14);
+      doc.text('Key Skills', 20, y);
+      y += 6;
+      doc.setFontSize(12);
+      const skills = [
+        'ICD-10 Coding', 'CPT Coding', 'HCPCS Coding', 'Medical Terminology',
+        'Healthcare Regulations (HIPAA)', `EHR/EMR Systems (${ehrSystems})`,
+        'Claims Processing', 'Insurance Billing', 'Chart Review', 'Data Entry',
+        'Attention to Detail', 'Analytical Skills', 'Healthcare Documentation'
+      ];
+      skills.forEach(skill => {
+        doc.text(`• ${skill}`, 20, y);
+        y += 6;
+      });
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text('Certifications', 20, y);
+      y += 6;
+      doc.setFontSize(12);
+      certifications.split(',').forEach(cert => {
+        doc.text(`• ${cert.trim()}`, 20, y);
+        y += 6;
+      });
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text('Professional Experience', 20, y);
+      y += 6;
+      doc.setFontSize(12);
+      doc.text(`${jobTitle1}`, 20, y);
+      y += 6;
+      doc.text(`${company1}, ${location1}`, 20, y);
+      y += 6;
+      doc.text(dates1, 20, y);
+      y += 6;
+      jobDesc1.forEach(desc => {
+        doc.text(`• ${desc}`, 20, y, { maxWidth: 170 });
+        y += 6;
+      });
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text('Education', 20, y);
+      y += 6;
+      doc.setFontSize(12);
+      doc.text(education, 20, y);
+      y += 6;
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text('Technical Skills', 20, y);
+      y += 6;
+      doc.setFontSize(12);
+      doc.text(`• Medical Coding Software: ${codingSoftware}`, 20, y);
+      y += 6;
+      doc.text(`• Electronic Health Records (EHR/EMR): ${ehrSystems}`, 20, y);
+      y += 6;
+      doc.text('• Microsoft Office Suite: Word, Excel, PowerPoint', 20, y);
+      y += 6;
+      doc.text('• Data Entry & Management', 20, y);
+      y += 6;
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text('Professional Affiliations', 20, y);
+      y += 6;
+      doc.setFontSize(12);
+      affiliations.split(',').forEach(aff => {
+        doc.text(`• ${aff.trim()}`, 20, y);
+        y += 6;
+      });
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text('Additional Information', 20, y);
+      y += 6;
+      doc.setFontSize(12);
+      doc.text(`• Fluent in ${languages}`, 20, y);
+      y += 6;
+      doc.text('• Available to work flexible hours or on-call shifts', 20, y);
 
       // Save PDF
-      doc.save("resume.pdf");
+      doc.save('resume.pdf');
     }
   </script>
 </body>

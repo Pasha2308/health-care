@@ -1,0 +1,203 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillDoze Resume Builder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <div class="container mx-auto p-4 max-w-4xl">
+    <h1 class="text-3xl font-bold text-center mb-6">SkillDoze Resume Builder</h1>
+    <p class="text-center text-gray-600 mb-8">Create an ATS-Friendly Resume for Healthcare Roles (Medical Coding & RCM)</p>
+
+    <!-- Resume Builder Form -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+      <h2 class="text-2xl font-semibold mb-4">Enter Your Details</h2>
+      <input id="name" type="text" placeholder="Full Name" class="w-full p-2 border rounded mb-2">
+      <input id="address" type="text" placeholder="Address" class="w-full p-2 border rounded mb-2">
+      <input id="phone" type="tel" placeholder="Phone Number" class="w-full p-2 border rounded mb-2">
+      <input id="email" type="email" placeholder="Email Address" class="w-full p-2 border rounded mb-2">
+      <input id="linkedin" type="url" placeholder="LinkedIn Profile (optional)" class="w-full p-2 border rounded mb-2">
+      <textarea id="summary" placeholder="Professional Summary (e.g., Detail-oriented Medical Coder with 2 years of experience...)" class="w-full p-2 border rounded mb-2" rows="4"></textarea>
+      <input id="experience1" type="text" placeholder="Experience 1 (e.g., Medical Coder, ABC Healthcare, Jan 2023 - Present)" class="w-full p-2 border rounded mb-2">
+      <textarea id="expDetails1" placeholder="Experience 1 Details (one per line, e.g., Coded ICD-10 diagnoses)" class="w-full p-2 border rounded mb-2" rows="4"></textarea>
+      <input id="experience2" type="text" placeholder="Experience 2 (optional)" class="w-full p-2 border rounded mb-2">
+      <textarea id="expDetails2" placeholder="Experience 2 Details (optional, one per line)" class="w-full p-2 border rounded mb-2" rows="4"></textarea>
+      <input id="certifications" type="text" placeholder="Certifications (e.g., CPC – AAPC, 2023; HIPAA, 2023)" class="w-full p-2 border rounded mb-2">
+      <input id="education" type="text" placeholder="Education (e.g., BS Health Information Management, XYZ University, 2020)" class="w-full p-2 border rounded mb-2">
+      <input id="skills" type="text" placeholder="Skills (e.g., ICD-10 Coding, CPT Coding, Financial Analysis)" class="w-full p-2 border rounded mb-2">
+      <input id="languages" type="text" placeholder="Languages (e.g., English, Spanish)" class="w-full p-2 border rounded mb-2">
+      <button onclick="generateResume()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Generate Resume</button>
+    </div>
+  </div>
+
+  <script>
+    function generateResume() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      // Collect user inputs
+      const name = document.getElementById('name').value || 'John Doe';
+      const address = document.getElementById('address').value || '123 Main St, City, State';
+      const phone = document.getElementById('phone').value || '123-456-7890';
+      const email = document.getElementById('email').value || 'john.doe@example.com';
+      const linkedin = document.getElementById('linkedin').value || '';
+      const summary = document.getElementById('summary').value || (
+        'Detail-oriented and certified Medical Coder with 2 years of experience in coding medical diagnoses and procedures using ICD-10, CPT, and HCPCS codes. ' +
+        'Adept at ensuring accuracy and compliance with healthcare regulations, working collaboratively with healthcare professionals to maintain patient records. ' +
+        'Proficient in medical terminology, data entry, and utilizing EHR systems to streamline operations.'
+      );
+      const experience1 = document.getElementById('experience1').value || 'Medical Coder, ABC Healthcare Services, Jan 2023 - Present';
+      const expDetails1 = document.getElementById('expDetails1').value.split('\n').filter(line => line.trim()) || [
+        'Reviewed patient records and coded diagnoses and procedures using ICD-10, CPT, and HCPCS systems.',
+        'Ensured all coding was in compliance with healthcare regulations and payer guidelines.'
+      ];
+      const experience2 = document.getElementById('experience2').value || '';
+      const expDetails2 = document.getElementById('expDetails2').value.split('\n').filter(line => line.trim()) || [];
+      const certifications = document.getElementById('certifications').value || 'Certified Professional Coder (CPC) – AAPC, 2023; HIPAA Certification, 2023';
+      const education = document.getElementById('education').value || 'BS Health Information Management, XYZ University, 2020';
+      const skillsInput = document.getElementById('skills').value || (
+        'ICD-10 Coding, CPT Coding, HCPCS Coding, Medical Terminology, Healthcare Regulations (HIPAA), ' +
+        'EHR/EMR Systems (Epic, Cerner), Claims Processing, Insurance Billing, Data Entry, Analytical Skills'
+      );
+      const languages = document.getElementById('languages').value || 'English';
+
+      // Default healthcare skills
+      const defaultSkills = [
+        'ICD-10 Coding', 'CPT Coding', 'HCPCS Coding', 'Medical Terminology',
+        'Healthcare Regulations (HIPAA)', 'EHR/EMR Systems (Epic, Cerner)',
+        'Claims Processing', 'Insurance Billing', 'Data Entry', 'Analytical Skills'
+      ];
+      const userSkills = skillsInput.split(',').map(s => s.trim()).filter(s => s);
+      const allSkills = [...new Set([...defaultSkills, ...userSkills])];
+
+      // ATS-Friendly Resume Content
+      let y = 20;
+      doc.setFontSize(16);
+      doc.text(name, 20, y);
+      y += 10;
+      doc.setFontSize(12);
+      doc.text(address, 20, y);
+      y += 6;
+      doc.text(`Phone: ${phone}`, 20, y);
+      y += 6;
+      doc.text(`Email: ${email}`, 20, y);
+      y += 6;
+      if (linkedin) {
+        doc.text(`LinkedIn: ${linkedin}`, 20, y);
+        y += 6;
+      }
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text('Professional Summary', 20, y);
+      y += 6;
+      doc.setFontSize(12);
+      doc.text(summary, 20, y, { maxWidth: 170 });
+      y += doc.getTextDimensions(summary, { maxWidth: 170 }).h + 10;
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text('Experience', 20, y);
+      y += 6;
+      doc.setFontSize(12);
+      doc.text(experience1, 20, y);
+      y += 6;
+      expDetails1.forEach(detail => {
+        doc.text(`• ${detail}`, 20, y, { maxWidth: 170 });
+        y += 6;
+      });
+      if (experience2) {
+        y += 6;
+        doc.text(experience2, 20, y);
+        y += 6;
+        expDetails2.forEach(detail => {
+          doc.text(`• ${detail}`, 20, y, { maxWidth: 170 });
+          y += 6;
+        });
+      }
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text('Certifications', 20, y);
+      y += 6;
+      doc.setFontSize(12);
+      certifications.split(',').forEach(cert => {
+        doc.text(`• ${cert.trim()}`, 20, y);
+        y += 6;
+      });
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text('Education', 20, y);
+      y += 6;
+      doc.setFontSize(12);
+      education.split(',').forEach(edu => {
+        doc.text(`• ${edu.trim()}`, 20, y);
+        y += 6;
+      });
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text('Skills', 20, y);
+      y += 6;
+      doc.setFontSize(12);
+      allSkills.forEach(skill => {
+        doc.text(`• ${skill}`, 20, y);
+        y += 6;
+      });
+
+      y += 10;
+      doc.setFontSize(14);
+      doc.text('Languages', 20, y);
+      y += 6;
+      doc.setFontSize(12);
+      doc.text(`• ${languages}`, 20, y);
+
+      // Save PDF
+      doc.save(`${name.replace(' ', '_')}_Resume.pdf`);
+    }
+  </script>
+</body>
+</html>
